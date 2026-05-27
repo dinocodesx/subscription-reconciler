@@ -4,18 +4,16 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	"path/filepath"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/subscription-reconciler/internal/config"
-	httpapi "github.com/subscription-reconciler/internal/http"
 	"github.com/subscription-reconciler/internal/repository/postgres"
 )
 
 func Run(ctx context.Context, cfg config.Config) error {
-	logger := log.Default()
+	// logger := log.Default()
 
 	pool, err := connectPool(ctx, cfg)
 	if err != nil {
@@ -27,15 +25,15 @@ func Run(ctx context.Context, cfg config.Config) error {
 	if err := store.Migrate(ctx, filepath.Join(".", "migrations")); err != nil {
 		return err
 	}
-	if err := store.SeedDemoData(ctx); err != nil {
-		return err
-	}
+	// if err := store.SeedDemoData(ctx); err != nil {
+	// 	return err
+	// }
 
-	router := httpapi.NewRouter(store)
-	server := &http.Server{
-		Addr:    cfg.HTTPAddr,
-		Handler: router,
-	}
+	// router := httpapi.NewRouter(store)
+	// server := &http.Server{
+	// 	Addr:    cfg.HTTPAddr,
+	// 	Handler: router,
+	// }
 
 	return nil
 }
