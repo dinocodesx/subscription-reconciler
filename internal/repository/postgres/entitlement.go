@@ -53,3 +53,29 @@ func (s *Store) getCanonicalEntitlementTx(ctx context.Context, tx pgx.Tx, userID
 
 	return entitlement, nil
 }
+
+func (s *Store) upsertCanonicalEntitlementTx(ctx context.Context, tx pgx.Tx, entitlement entdom.Entitlement) error {
+	if _, err := tx.Exec(
+		ctx,
+		`INSERT INTO entitlements (user_id, active, source, expires_at, last_changed_at, reason, updated_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)
+		 ON CONFLICT (user_id) DO UPDATE
+		 SET active = EXCLUDED.active,
+		     source = EXCLUDED.source,
+		     expires_at = EXCLUDED.expires_at,
+		     last_changed_at = EXCLUDED.last_changed_at,
+		     reason = EXCLUDED.reason,
+		     updated_at = EXCLUDED.updated_at`,
+		entitlement.UserID,
+		entitlement.Active,
+		entitlement.Source,
+		nullableTime(entitlement.ExpiresAt),
+		entitlement.LastChangedAt.UTC(),
+		entitlement.Reason,
+		s.now().UTC(),
+	); err != nil {
+		return fmt.Errorf("upsert canonical entitlement: %w", err)
+	}
+
+	return nil
+}
