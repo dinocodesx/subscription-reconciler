@@ -7,6 +7,7 @@ import (
 	"time"
 
 	entdom "github.com/subscription-reconciler/internal/domain/entitlement"
+	notifdom "github.com/subscription-reconciler/internal/domain/notification"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -75,6 +76,45 @@ func (s *Store) upsertCanonicalEntitlementTx(ctx context.Context, tx pgx.Tx, ent
 		s.now().UTC(),
 	); err != nil {
 		return fmt.Errorf("upsert canonical entitlement: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Store) syncExpiringSoonNotificationTx(ctx context.Context, tx pgx.Tx, entitlement entdom.Entitlement) error {
+	now := s.now().UTC()
+	desired, shouldSchedule := notifdom.DesiredSchedule(now, entitlement.Active, entitlement.ExpiresAt)
+
+	// If expiry moved or access disappeared, drop the stale unsent row before inserting the fresh one.
+	if _, err := tx.Exec(
+		ctx,
+		`DELETE FROM notifications
+		 WHERE user_id = $1
+		   AND type = $2
+		   AND sent_at IS NULL
+		   AND ($3::timestamptz IS NULL OR scheduled_for <> $3)`,
+		entitlement.UserID,
+		notifdom.KindPremiumExpiresSoon,
+		nullableTime(desired),
+	); err != nil {
+		return fmt.Errorf("delete stale notifications: %w", err)
+	}
+
+	if !shouldSchedule {
+		return nil
+	}
+
+	if _, err := tx.Exec(
+		ctx,
+		`INSERT INTO notifications (user_id, type, scheduled_for, sent_at, created_at)
+		 VALUES ($1, $2, $3, NULL, $4)
+		 ON CONFLICT DO NOTHING`,
+		entitlement.UserID,
+		notifdom.KindPremiumExpiresSoon,
+		desired.UTC(),
+		now,
+	); err != nil {
+		return fmt.Errorf("insert expiring soon notification: %w", err)
 	}
 
 	return nil
