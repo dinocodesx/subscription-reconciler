@@ -12,8 +12,10 @@ func NewRouter(store *postgres.Store) http.Handler {
 	mux := http.NewServeMux()
 
 	storeHandler := handlers.NewStoreWebhookHandler(store)
+	marketplaceHandler := handlers.NewMarketplaceWebhookHandler(store)
 
 	mux.HandleFunc("POST /webhooks/store", storeHandler.Handle)
+	mux.HandleFunc("POST /webhooks/marketplace/revoke", marketplaceHandler.Handle)
 
 	return mux
 }
