@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/subscription-reconciler/internal/config"
 	httpapi "github.com/subscription-reconciler/internal/http"
+	"github.com/subscription-reconciler/internal/repository/postgres"
 )
 
 func Run(ctx context.Context, cfg config.Config) error {
