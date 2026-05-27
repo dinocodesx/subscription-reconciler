@@ -11,6 +11,53 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+func (s *Store) ApplyStoreEvent(ctx context.Context, event storedom.Event) (bool, entdom.Entitlement, error) {
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return false, entdom.Entitlement{}, fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	inserted, err := s.insertStoreEventTx(ctx, tx, event)
+	if err != nil {
+		return false, entdom.Entitlement{}, err
+	}
+
+	if inserted {
+		events, err := s.loadStoreEventsTx(ctx, tx, event.UserID)
+		if err != nil {
+			return false, entdom.Entitlement{}, err
+		}
+
+		// Replay from source-of-truth events on every accepted insert so late arrivals can repair state.
+		storedom.SortEvents(events)
+		state := storedom.Reduce(events, s.now())
+		if err := s.upsertSourceEntitlementTx(ctx, tx, entdom.SourceEntitlement{
+			UserID:        event.UserID,
+			Source:        entdom.SourceStore,
+			Active:        state.Active,
+			ExpiresAt:     state.ExpiresAt,
+			LastChangedAt: state.LastChangedAt,
+			Reason:        state.Reason,
+			UpdatedAt:     s.now().UTC(),
+		}); err != nil {
+			return false, entdom.Entitlement{}, err
+		}
+	}
+
+	eventIDStr := event.EventID
+	entitlement, err := s.recomputeCanonicalEntitlementTx(ctx, tx, event.UserID, &eventIDStr, entdom.SourceStore)
+	if err != nil {
+		return false, entdom.Entitlement{}, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return false, entdom.Entitlement{}, fmt.Errorf("commit transaction: %w", err)
+	}
+
+	return inserted, entitlement, nil
+}
+
 func (s *Store) insertStoreEventTx(ctx context.Context, tx pgx.Tx, event storedom.Event) (bool, error) {
 	commandTag, err := tx.Exec(
 		ctx,
