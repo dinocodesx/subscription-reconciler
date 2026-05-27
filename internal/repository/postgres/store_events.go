@@ -2,8 +2,10 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	entdom "github.com/subscription-reconciler/internal/domain/entitlement"
 	storedom "github.com/subscription-reconciler/internal/domain/store"
 
 	"github.com/jackc/pgx/v5"
@@ -63,4 +65,24 @@ func (s *Store) loadStoreEventsTx(ctx context.Context, tx pgx.Tx, userID string)
 	}
 
 	return events, nil
+}
+
+func (s *Store) GetEntitlement(ctx context.Context, userID string) (entdom.Entitlement, error) {
+	row := s.pool.QueryRow(
+		ctx,
+		`SELECT user_id, active, source, expires_at, last_changed_at, reason
+		 FROM entitlements
+		 WHERE user_id = $1`,
+		userID,
+	)
+
+	entitlement, err := scanEntitlement(row)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return entdom.DefaultEntitlement(userID), nil
+	}
+	if err != nil {
+		return entdom.Entitlement{}, fmt.Errorf("get entitlement: %w", err)
+	}
+
+	return entitlement, nil
 }
