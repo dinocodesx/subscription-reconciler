@@ -15,6 +15,7 @@ const (
 
 const SubscriptionDuration = 30 * 24 * time.Hour
 
+// Event is the normalized store webhook payload persisted for replay.
 type Event struct {
 	EventID    string
 	UserID     string
@@ -24,6 +25,7 @@ type Event struct {
 	ReceivedAt time.Time
 }
 
+// Valid limits webhook processing to the event types defined by the assignment.
 func (t EventType) Valid() bool {
 	switch t {
 	case EventInitialPurchase, EventRenewal, EventCancellation, EventBillingIssue, EventExpiration, EventUnCancellation:
