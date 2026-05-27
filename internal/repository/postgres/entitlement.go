@@ -81,6 +81,7 @@ func (s *Store) upsertCanonicalEntitlementTx(ctx context.Context, tx pgx.Tx, ent
 	return nil
 }
 
+// syncExpiringSoonNotificationTx keeps one pending expiry notification aligned with the latest entitlement state.
 func (s *Store) syncExpiringSoonNotificationTx(ctx context.Context, tx pgx.Tx, entitlement entdom.Entitlement) error {
 	now := s.now().UTC()
 	desired, shouldSchedule := notifdom.DesiredSchedule(now, entitlement.Active, entitlement.ExpiresAt)
