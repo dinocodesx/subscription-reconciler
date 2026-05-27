@@ -26,15 +26,40 @@ func (s *Store) recomputeCanonicalEntitlementTx(ctx context.Context, tx pgx.Tx, 
 		return entdom.Entitlement{}, err
 	}
 
-	// if err := s.insertAuditLogTx(ctx, tx, userID, eventID, triggerSource, prev, entitlement); err != nil {
-	// 	return entdom.Entitlement{}, err
-	// }
-
 	if err := s.syncExpiringSoonNotificationTx(ctx, tx, entitlement); err != nil {
 		return entdom.Entitlement{}, err
 	}
 
 	return entitlement, nil
+}
+
+func (s *Store) upsertSourceEntitlementTx(ctx context.Context, tx pgx.Tx, state entdom.SourceEntitlement) error {
+	if _, err := tx.Exec(
+		ctx,
+		`INSERT INTO source_entitlements
+			(user_id, source, active, expires_at, last_changed_at, reason, updated_at, next_poll_at)
+		 VALUES
+			($1, $2, $3, $4, $5, $6, $7, $8)
+		 ON CONFLICT (user_id, source) DO UPDATE
+		 SET active = EXCLUDED.active,
+		     expires_at = EXCLUDED.expires_at,
+		     last_changed_at = EXCLUDED.last_changed_at,
+		     reason = EXCLUDED.reason,
+		     updated_at = EXCLUDED.updated_at,
+		     next_poll_at = EXCLUDED.next_poll_at`,
+		state.UserID,
+		state.Source,
+		state.Active,
+		nullableTime(state.ExpiresAt),
+		state.LastChangedAt.UTC(),
+		state.Reason,
+		state.UpdatedAt.UTC(),
+		nullableTime(state.NextPollAt),
+	); err != nil {
+		return fmt.Errorf("upsert source entitlement for %s/%s: %w", state.UserID, state.Source, err)
+	}
+
+	return nil
 }
 
 func (s *Store) listSourceEntitlementsTx(ctx context.Context, tx pgx.Tx, userID string) ([]entdom.SourceEntitlement, error) {
