@@ -7,8 +7,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/subscription-reconciler/internal/app"
-	"github.com/subscription-reconciler/internal/config"
+	"github.com/dinocodesx/subscription-reconciler/internal/app"
+	"github.com/dinocodesx/subscription-reconciler/internal/config"
 )
 
 func main() {

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	entdom "github.com/subscription-reconciler/internal/domain/entitlement"
+	entdom "github.com/dinocodesx/subscription-reconciler/internal/domain/entitlement"
 
 	"github.com/jackc/pgx/v5"
 )

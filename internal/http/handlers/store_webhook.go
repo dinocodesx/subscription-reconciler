@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	storeevent "github.com/subscription-reconciler/internal/domain/store"
-	"github.com/subscription-reconciler/internal/repository/postgres"
+	storeevent "github.com/dinocodesx/subscription-reconciler/internal/domain/store"
+	"github.com/dinocodesx/subscription-reconciler/internal/repository/postgres"
 )
 
 type StoreWebhookHandler struct {

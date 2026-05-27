@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	entdom "github.com/subscription-reconciler/internal/domain/entitlement"
+	entdom "github.com/dinocodesx/subscription-reconciler/internal/domain/entitlement"
 )
 
 type entitlementResponse struct {

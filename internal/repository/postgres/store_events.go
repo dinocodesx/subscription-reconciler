@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	entdom "github.com/subscription-reconciler/internal/domain/entitlement"
-	storedom "github.com/subscription-reconciler/internal/domain/store"
+	entdom "github.com/dinocodesx/subscription-reconciler/internal/domain/entitlement"
+	storedom "github.com/dinocodesx/subscription-reconciler/internal/domain/store"
 
 	"github.com/jackc/pgx/v5"
 )

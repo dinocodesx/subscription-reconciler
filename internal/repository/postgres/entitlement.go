@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	entdom "github.com/subscription-reconciler/internal/domain/entitlement"
-	notifdom "github.com/subscription-reconciler/internal/domain/notification"
+	entdom "github.com/dinocodesx/subscription-reconciler/internal/domain/entitlement"
+	notifdom "github.com/dinocodesx/subscription-reconciler/internal/domain/notification"
 
 	"github.com/jackc/pgx/v5"
 )

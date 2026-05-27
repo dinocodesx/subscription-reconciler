@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/dinocodesx/subscription-reconciler/internal/config"
+	"github.com/dinocodesx/subscription-reconciler/internal/repository/postgres"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/subscription-reconciler/internal/config"
-	"github.com/subscription-reconciler/internal/repository/postgres"
 )
 
 func Run(ctx context.Context, cfg config.Config) error {

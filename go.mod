@@ -1,4 +1,4 @@
-module github.com/subscription-reconciler
+module github.com/dinocodesx/subscription-reconciler
 
 go 1.26.3
 
