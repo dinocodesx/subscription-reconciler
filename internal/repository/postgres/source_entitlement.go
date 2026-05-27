@@ -6,9 +6,46 @@ import (
 	"time"
 
 	entdom "github.com/dinocodesx/subscription-reconciler/internal/domain/entitlement"
+	"github.com/dinocodesx/subscription-reconciler/internal/domain/marketplace"
 
 	"github.com/jackc/pgx/v5"
 )
+
+func (s *Store) RevokeMarketplaceUsers(ctx context.Context, userIDs []string) error {
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	now := s.now().UTC()
+	for _, userID := range userIDs {
+		if userID == "" {
+			continue
+		}
+
+		if err := s.upsertSourceEntitlementTx(ctx, tx, entdom.SourceEntitlement{
+			UserID:        userID,
+			Source:        entdom.SourceMarketplace,
+			Active:        false,
+			LastChangedAt: now,
+			Reason:        marketplace.RevokeReason,
+			UpdatedAt:     now,
+		}); err != nil {
+			return err
+		}
+
+		if _, err := s.recomputeCanonicalEntitlementTx(ctx, tx, userID); err != nil {
+			return err
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
+	}
+
+	return nil
+}
 
 func (s *Store) recomputeCanonicalEntitlementTx(ctx context.Context, tx pgx.Tx, userID string, eventID *string, triggerSource entdom.Source) (entdom.Entitlement, error) {
 	_, err := s.getCanonicalEntitlementTx(ctx, tx, userID)
