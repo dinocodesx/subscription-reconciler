@@ -8,6 +8,7 @@ import (
 	"sort"
 )
 
+// Migrate applies every SQL file in lexical order from the provided directory.
 func (s *Store) Migrate(ctx context.Context, dir string) error {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
