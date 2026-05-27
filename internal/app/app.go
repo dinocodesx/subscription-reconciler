@@ -4,10 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
+	"path/filepath"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/subscription-reconciler/internal/config"
+	httpapi "github.com/subscription-reconciler/internal/http"
 )
 
 func Run(ctx context.Context, cfg config.Config) error {
@@ -18,6 +21,20 @@ func Run(ctx context.Context, cfg config.Config) error {
 		return err
 	}
 	defer pool.Close()
+
+	store := postgres.NewStore(pool, time.Now, cfg.CarrierPollInterval)
+	if err := store.Migrate(ctx, filepath.Join(".", "migrations")); err != nil {
+		return err
+	}
+	if err := store.SeedDemoData(ctx); err != nil {
+		return err
+	}
+
+	router := httpapi.NewRouter(store)
+	server := &http.Server{
+		Addr:    cfg.HTTPAddr,
+		Handler: router,
+	}
 
 	return nil
 }
