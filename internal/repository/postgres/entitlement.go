@@ -1,10 +1,14 @@
 package postgres
 
 import (
+	"context"
+	"errors"
+	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	entdom "github.com/subscription-reconciler/internal/domain/entitlement"
+
+	"github.com/jackc/pgx/v5"
 )
 
 func scanEntitlement(row pgx.Row) (entdom.Entitlement, error) {
@@ -26,6 +30,26 @@ func scanEntitlement(row pgx.Row) (entdom.Entitlement, error) {
 	entitlement.Source = entdom.Source(source)
 	entitlement.ExpiresAt = cloneTime(expiresAt)
 	entitlement.LastChangedAt = entitlement.LastChangedAt.UTC()
+
+	return entitlement, nil
+}
+
+func (s *Store) getCanonicalEntitlementTx(ctx context.Context, tx pgx.Tx, userID string) (entdom.Entitlement, error) {
+	row := tx.QueryRow(
+		ctx,
+		`SELECT user_id, active, source, expires_at, last_changed_at, reason
+		 FROM entitlements
+		 WHERE user_id = $1`,
+		userID,
+	)
+
+	entitlement, err := scanEntitlement(row)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return entdom.DefaultEntitlement(userID), nil
+	}
+	if err != nil {
+		return entdom.Entitlement{}, fmt.Errorf("get canonical entitlement for audit: %w", err)
+	}
 
 	return entitlement, nil
 }
