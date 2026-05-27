@@ -20,6 +20,7 @@ type Config struct {
 	NotificationBatchSize int
 }
 
+// Load builds runtime configuration from environment variables with assignment-friendly defaults.
 func Load() (Config, error) {
 	cfg := Config{
 		HTTPAddr:              getEnv("HTTP_ADDR", ":8080"),
@@ -68,6 +69,7 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
+// getDuration parses duration-valued environment variables such as "5m" or "15s".
 func getDuration(key string, fallback time.Duration) (time.Duration, error) {
 	value := os.Getenv(key)
 	if value == "" {
@@ -82,6 +84,7 @@ func getDuration(key string, fallback time.Duration) (time.Duration, error) {
 	return duration, nil
 }
 
+// getInt parses integer-valued environment variables while preserving a sensible default.
 func getInt(key string, fallback int) (int, error) {
 	value := os.Getenv(key)
 	if value == "" {
