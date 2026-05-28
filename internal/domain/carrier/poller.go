@@ -10,6 +10,7 @@ type PollRepository interface {
 	ApplyCarrierStatus(ctx context.Context, userID, status string) error
 }
 
+// Poller claims due carrier-backed users, calls the carrier API, and applies the result.
 type Poller struct {
 	repo      PollRepository
 	client    Client
@@ -17,6 +18,7 @@ type Poller struct {
 	logger    *log.Logger
 }
 
+// NewPoller constructs the carrier reconciliation loop dependency.
 func NewPoller(repo PollRepository, client Client, batchSize int, logger *log.Logger) *Poller {
 	return &Poller{
 		repo:      repo,
@@ -26,6 +28,7 @@ func NewPoller(repo PollRepository, client Client, batchSize int, logger *log.Lo
 	}
 }
 
+// RunOnce processes one batch so the loop orchestration can live outside the domain package.
 func (p *Poller) RunOnce(ctx context.Context) error {
 	userIDs, err := p.repo.ClaimCarrierUsers(ctx, p.batchSize)
 	if err != nil {
