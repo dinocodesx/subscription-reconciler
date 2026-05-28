@@ -35,7 +35,7 @@ func (s *Store) RevokeMarketplaceUsers(ctx context.Context, userIDs []string) er
 			return err
 		}
 
-		if _, err := s.recomputeCanonicalEntitlementTx(ctx, tx, userID); err != nil {
+		if _, err := s.recomputeCanonicalEntitlementTx(ctx, tx, userID, nil, entdom.SourceMarketplace); err != nil {
 			return err
 		}
 	}
@@ -193,4 +193,42 @@ func (s *Store) ClaimCarrierUsers(ctx context.Context, limit int) ([]string, err
 	}
 
 	return userIDs, nil
+}
+
+func (s *Store) ApplyCarrierStatus(ctx context.Context, userID, status string) error {
+	if status == "api_error" {
+		return nil
+	}
+
+	now := s.now().UTC()
+	active := status == "active"
+
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	nextPollAt := now.Add(s.carrierPollInterval)
+	if err := s.upsertSourceEntitlementTx(ctx, tx, entdom.SourceEntitlement{
+		UserID:        userID,
+		Source:        entdom.SourceCarrier,
+		Active:        active,
+		LastChangedAt: now,
+		Reason:        status,
+		UpdatedAt:     now,
+		NextPollAt:    &nextPollAt,
+	}); err != nil {
+		return err
+	}
+
+	if _, err := s.recomputeCanonicalEntitlementTx(ctx, tx, userID, nil, entdom.SourceCarrier); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
+	}
+
+	return nil
 }
