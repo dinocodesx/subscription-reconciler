@@ -144,3 +144,53 @@ func (s *Store) listSourceEntitlementsTx(ctx context.Context, tx pgx.Tx, userID 
 
 	return states, nil
 }
+
+func (s *Store) ClaimCarrierUsers(ctx context.Context, limit int) ([]string, error) {
+	now := s.now().UTC()
+	nextPollAt := now.Add(s.carrierPollInterval)
+
+	rows, err := s.pool.Query(
+		ctx,
+		`WITH claimed AS (
+			SELECT se.user_id
+			FROM source_entitlements se
+			INNER JOIN entitlements e ON e.user_id = se.user_id
+			WHERE se.source = $1
+			  AND e.source = $1
+			  AND se.next_poll_at IS NOT NULL
+			  AND se.next_poll_at <= $2
+			ORDER BY se.next_poll_at ASC, se.user_id ASC
+			FOR UPDATE SKIP LOCKED
+			LIMIT $3
+		)
+		UPDATE source_entitlements se
+		SET next_poll_at = $4, updated_at = $2
+		FROM claimed
+		WHERE se.user_id = claimed.user_id
+		  AND se.source = $1
+		RETURNING se.user_id`,
+		entdom.SourceCarrier,
+		now,
+		limit,
+		nextPollAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("claim carrier users: %w", err)
+	}
+	defer rows.Close()
+
+	userIDs := make([]string, 0)
+	for rows.Next() {
+		var userID string
+		if err := rows.Scan(&userID); err != nil {
+			return nil, fmt.Errorf("scan claimed carrier user: %w", err)
+		}
+		userIDs = append(userIDs, userID)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate claimed carrier users: %w", err)
+	}
+
+	return userIDs, nil
+}
