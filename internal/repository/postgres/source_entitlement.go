@@ -233,6 +233,70 @@ func (s *Store) ApplyCarrierStatus(ctx context.Context, userID, status string) e
 	return nil
 }
 
+func (s *Store) SeedDemoData(ctx context.Context) error {
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	now := s.now().UTC()
+	nextPollAt := now
+
+	demoRows := []entdom.SourceEntitlement{
+		{
+			UserID:        "u_carrier_demo",
+			Source:        entdom.SourceCarrier,
+			Active:        true,
+			LastChangedAt: now,
+			Reason:        "seeded_active",
+			UpdatedAt:     now,
+			NextPollAt:    &nextPollAt,
+		},
+		{
+			UserID:        "u_market_demo",
+			Source:        entdom.SourceMarketplace,
+			Active:        true,
+			LastChangedAt: now,
+			Reason:        "seeded_active",
+			UpdatedAt:     now,
+		},
+	}
+
+	for _, row := range demoRows {
+		if err := s.insertSourceEntitlementIfMissingTx(ctx, tx, row); err != nil {
+			return err
+		}
+
+		if _, err := s.recomputeCanonicalEntitlementTx(ctx, tx, row.UserID, nil, row.Source); err != nil {
+			return err
+		}
+	}
+
+	storeExpires := now.Add(12 * time.Hour)
+	if err := s.insertSourceEntitlementIfMissingTx(ctx, tx, entdom.SourceEntitlement{
+		UserID:        "u_store_demo",
+		Source:        entdom.SourceStore,
+		Active:        true,
+		ExpiresAt:     &storeExpires,
+		LastChangedAt: now,
+		Reason:        "seeded_expiring_soon",
+		UpdatedAt:     now,
+	}); err != nil {
+		return err
+	}
+
+	if _, err := s.recomputeCanonicalEntitlementTx(ctx, tx, "u_store_demo", nil, entdom.SourceStore); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
+	}
+
+	return nil
+}
+
 func (s *Store) insertSourceEntitlementIfMissingTx(ctx context.Context, tx pgx.Tx, state entdom.SourceEntitlement) error {
 	if _, err := tx.Exec(
 		ctx,
