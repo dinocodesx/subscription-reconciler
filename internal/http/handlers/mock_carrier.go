@@ -11,10 +11,12 @@ type MockCarrierHandler struct {
 	mu     sync.Mutex
 }
 
+// NewMockCarrierHandler builds the randomized carrier stub required by the assignment.
 func NewMockCarrierHandler(random *rand.Rand) *MockCarrierHandler {
 	return &MockCarrierHandler{random: random}
 }
 
+// Handle returns randomized carrier plan statuses with the requested distribution.
 func (h *MockCarrierHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Query().Get("userId") == "" {
 		writeError(w, http.StatusBadRequest, "userId is required")
