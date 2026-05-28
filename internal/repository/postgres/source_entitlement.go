@@ -195,6 +195,10 @@ func (s *Store) ClaimCarrierUsers(ctx context.Context, limit int) ([]string, err
 	return userIDs, nil
 }
 
+func (s *Store) SeedDemoData(ctx context.Context) error {
+	return nil
+}
+
 func (s *Store) ApplyCarrierStatus(ctx context.Context, userID, status string) error {
 	if status == "api_error" {
 		return nil
