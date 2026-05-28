@@ -195,10 +195,6 @@ func (s *Store) ClaimCarrierUsers(ctx context.Context, limit int) ([]string, err
 	return userIDs, nil
 }
 
-func (s *Store) SeedDemoData(ctx context.Context) error {
-	return nil
-}
-
 func (s *Store) ApplyCarrierStatus(ctx context.Context, userID, status string) error {
 	if status == "api_error" {
 		return nil
@@ -232,6 +228,29 @@ func (s *Store) ApplyCarrierStatus(ctx context.Context, userID, status string) e
 
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("commit transaction: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Store) insertSourceEntitlementIfMissingTx(ctx context.Context, tx pgx.Tx, state entdom.SourceEntitlement) error {
+	if _, err := tx.Exec(
+		ctx,
+		`INSERT INTO source_entitlements
+			(user_id, source, active, expires_at, last_changed_at, reason, updated_at, next_poll_at)
+		 VALUES
+			($1, $2, $3, $4, $5, $6, $7, $8)
+		 ON CONFLICT (user_id, source) DO NOTHING`,
+		state.UserID,
+		state.Source,
+		state.Active,
+		nullableTime(state.ExpiresAt),
+		state.LastChangedAt.UTC(),
+		state.Reason,
+		state.UpdatedAt.UTC(),
+		nullableTime(state.NextPollAt),
+	); err != nil {
+		return fmt.Errorf("insert missing source entitlement for %s/%s: %w", state.UserID, state.Source, err)
 	}
 
 	return nil
