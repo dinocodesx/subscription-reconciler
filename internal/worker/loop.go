@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// runLoop provides shared ticker-and-logging behavior for the in-process workers.
 func runLoop(ctx context.Context, logger *log.Logger, interval time.Duration, name string, run func(context.Context) error) {
 	if err := run(ctx); err != nil {
 		logger.Printf("%s initial run failed: %v", name, err)
