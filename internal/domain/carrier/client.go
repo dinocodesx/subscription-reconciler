@@ -13,6 +13,7 @@ type Client interface {
 	PlanStatus(ctx context.Context, userID string) (string, error)
 }
 
+// HTTPClient calls the in-repo carrier stub over HTTP so the poller uses the same path as production code would.
 type HTTPClient struct {
 	baseURL string
 	client  *http.Client
@@ -22,6 +23,7 @@ type planResponse struct {
 	Status string `json:"status"`
 }
 
+// NewHTTPClient builds a carrier client pointed at the service's own mock endpoint.
 func NewHTTPClient(baseURL string) *HTTPClient {
 	return &HTTPClient{
 		baseURL: baseURL,
@@ -29,6 +31,7 @@ func NewHTTPClient(baseURL string) *HTTPClient {
 	}
 }
 
+// PlanStatus fetches a carrier plan snapshot for a single user.
 func (c *HTTPClient) PlanStatus(ctx context.Context, userID string) (string, error) {
 	base, err := url.Parse(c.baseURL)
 	if err != nil {
