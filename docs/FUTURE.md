@@ -57,7 +57,8 @@ CREATE INDEX idx_dlq_retry ON store_webhook_dlq (next_retry_at) WHERE NOT perman
 ### Handler Integration
 Modify `internal/http/handlers/store_webhook.go`:
 1.  When `h.store.ApplyStoreEvent` returns a transient error (which can be identified by wrapping database errors with a specific `IsTransient()` helper), instead of returning a `500 Internal Server Error`, the handler will call a new repository method `h.store.EnqueueDLQ(ctx, payload)`.
-2.  Return a `202 Accepted` to the caller, indicating the event is received and will be retried asynchronously.
+2.  If `h.store.EnqueueDLQ` succeeds, return a `202 Accepted` to the caller, indicating the event is received and will be retried asynchronously.
+3.  If `h.store.EnqueueDLQ` fails (e.g., database is down), the handler **must** return a `5xx` error so the upstream caller (the App Store) will retry the delivery. This ensures "enqueue-or-fail" semantics and prevents silent event loss.
 
 ### DLQ Replay Worker
 Create `internal/worker/dlq_replay.go`:
@@ -103,7 +104,15 @@ Modify `internal/http/handlers/entitlement.go`:
     -   Construct a key: `entitlement:{user_id}`.
     -   Attempt `redis.Get(ctx, key)`.
     -   **On Hit:** Deserialize the JSON and return it immediately.
-    -   **On Miss:** Call `h.store.GetEntitlement(ctx, userID)`, serialize the result, and call `redis.Set(ctx, key, result, 1*time.Hour)`.
+    -   **On Miss:**
+        -   To prevent a race condition where stale data is written back to Redis after a concurrent update, use a **populate lock**.
+        -   Attempt to acquire a Redis lock (e.g., `SET entitlement:lock:{user_id} NX EX 5`).
+        -   If the lock is acquired:
+            1. Call `h.store.GetEntitlement(ctx, userID)`.
+            2. Serialize and call `redis.Set(ctx, key, result, 1*time.Hour)`.
+            3. Release the lock.
+        -   If the lock cannot be acquired, optionally fallback to a direct DB read without caching, or wait briefly and retry the cache get.
+        -   *Trade-off Note:* This mitigation prevents the "stale-writer" race. Alternatively, we can accept the risk and use a much shorter TTL (e.g., 1-5 minutes) to minimize the inconsistency window.
 2.  **Write Path (Cache Invalidation):**
     -   This is the most critical part. To prevent serving stale data, the cache **must** be invalidated whenever a user's state changes.
     -   In `internal/http/handlers/store_webhook.go`, after a successful `ApplyStoreEvent`, call `redis.Del(ctx, "entitlement:"+payload.UserID)`.

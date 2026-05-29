@@ -190,3 +190,7 @@ Adding a **Redis** cache for the `GET /users/:id/entitlement` endpoint would sig
 ## 📄 License
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+---
+
+**Note:** GitHub Copilot and CodeRabbit were used for PR analysis and catching bugs during the development of this project.
