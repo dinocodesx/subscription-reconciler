@@ -42,20 +42,96 @@ You can also access the raw OpenAPI 3.0 specification file directly:
 - **Endpoint:** `POST /webhooks/store`
 - **Logic:** Handles asynchronous, out-of-order, and late-arriving events from the In-app Store. It persists every unique event and "replays" the user's history to reconstruct the current state. This ensures that a late-arriving "Initial Purchase" doesn't overwrite a more recent "Cancellation".
 
+#### Example Request
+```json
+{
+  "eventId": "evt_abc123",
+  "userId": "u_42",
+  "type": "RENEWAL",
+  "eventTimeMs": 1716700000000,
+  "productId": "premium_monthly"
+}
+```
+
+#### Example Response
+```json
+{
+  "duplicate": false,
+  "entitlement": {
+    "active": true,
+    "source": "STORE",
+    "expiresAt": "2026-06-10T00:00:00Z",
+    "lastChangedAt": "2026-05-20T11:23:00Z",
+    "reason": "RENEWAL"
+  }
+}
+```
+
 ### 2. Marketplace Bulk Revoke
 
 - **Endpoint:** `POST /webhooks/marketplace/revoke`
 - **Logic:** A monthly bulk revocation for marketplace users. It is scoped strictly to the `MARKETPLACE` source. If a user has a concurrent active subscription via the `STORE`, revoking their marketplace access will not impact their overall premium status.
 
+#### Example Request
+```json
+{
+  "userIds": ["u_42", "u_91", "u_133"]
+}
+```
+
+#### Example Response
+```json
+{
+  "revokedCount": 3
+}
+```
+
 ### 3. Entitlement Read Endpoint
 
-- **Endpoint:** `GET /users/:id/entitlement`
+- **Endpoint:** `GET /users/{id}/entitlement`
 - **Logic:** Returns the canonical entitlement state. If a user has multiple active sources, it resolves precedence in this order: `STORE` > `CARRIER` > `MARKETPLACE`.
+
+#### Example Request
+*No request body required.*
+
+#### Example Response
+```json
+{
+  "active": true,
+  "source": "STORE",
+  "expiresAt": "2026-06-25T10:00:00Z",
+  "lastChangedAt": "2026-05-26T10:00:00Z",
+  "reason": "INITIAL_PURCHASE"
+}
+```
 
 ### 4. Entitlement Timeline (Stretch Goal)
 
-- **Endpoint:** `GET /users/:id/timeline`
+- **Endpoint:** `GET /users/{id}/timeline`
 - **Logic:** Returns the reconstructed history of the user's entitlement changes from the internal Audit Log. This provides a transparent view of every state transition, including the reason and the event that triggered it.
+
+#### Example Request
+*No request body required.*
+
+#### Example Response
+```json
+{
+  "userId": "u_42",
+  "timeline": [
+    {
+      "eventId": "evt_abc123",
+      "source": "STORE",
+      "previousActive": false,
+      "previousSource": "NONE",
+      "previousReason": "",
+      "nextActive": true,
+      "nextSource": "STORE",
+      "nextReason": "INITIAL_PURCHASE",
+      "timestamp": "2026-05-20T11:23:00Z"
+    }
+  ]
+}
+```
 
 ---
 
