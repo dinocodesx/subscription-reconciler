@@ -25,5 +25,13 @@ func NewRouter(store *postgres.Store) http.Handler {
 
 	mux.HandleFunc("GET /mock/carrier/plan", mockCarrierHandler.Handle)
 
+	mux.HandleFunc("GET /openapi.yaml", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "openapi.yaml")
+	})
+
+	mux.HandleFunc("GET /api-docs", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "swagger_ui.html")
+	})
+
 	return mux
 }
