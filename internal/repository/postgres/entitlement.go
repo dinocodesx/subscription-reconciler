@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// scanEntitlement maps a pgx row into the canonical domain model.
 func scanEntitlement(row pgx.Row) (entdom.Entitlement, error) {
 	var entitlement entdom.Entitlement
 	var source string
@@ -35,6 +36,7 @@ func scanEntitlement(row pgx.Row) (entdom.Entitlement, error) {
 	return entitlement, nil
 }
 
+// getCanonicalEntitlementTx retrieves the canonical entitlement for a given user ID within a transaction.
 func (s *Store) getCanonicalEntitlementTx(ctx context.Context, tx pgx.Tx, userID string) (entdom.Entitlement, error) {
 	row := tx.QueryRow(
 		ctx,
@@ -55,6 +57,7 @@ func (s *Store) getCanonicalEntitlementTx(ctx context.Context, tx pgx.Tx, userID
 	return entitlement, nil
 }
 
+// upsertCanonicalEntitlementTx inserts or updates the canonical entitlement for a given user ID within a transaction.
 func (s *Store) upsertCanonicalEntitlementTx(ctx context.Context, tx pgx.Tx, entitlement entdom.Entitlement) error {
 	if _, err := tx.Exec(
 		ctx,
