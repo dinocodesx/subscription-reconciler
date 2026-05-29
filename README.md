@@ -109,4 +109,4 @@ While the `FOR UPDATE SKIP LOCKED` pattern is effective for current scales, I wo
 
 ### 4. Cache Layer
 
-Adding a **Redis** cache for the `GET /entitlement` endpoint would significantly reduce database load for high-frequency checks, using a cache-invalidation strategy triggered by new webhook events.
+Adding a **Redis** cache for the `GET /users/:id/entitlement` endpoint would significantly reduce database load for high-frequency checks, using a cache-invalidation strategy triggered by new webhook events.
