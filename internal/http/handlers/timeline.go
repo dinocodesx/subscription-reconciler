@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/dinocodesx/subscription-reconciler/internal/repository/postgres"
@@ -37,7 +38,8 @@ func (h *TimelineHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	entries, err := h.store.GetTimeline(r.Context(), userID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		log.Printf("get timeline for user %s: %v", userID, err)
+		writeError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
