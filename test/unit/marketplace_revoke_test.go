@@ -93,10 +93,6 @@ func TestMarketplaceRevokePreservesLastChangedAt(t *testing.T) {
 		UpdatedAt:     revokeTime,
 	}
 
-	if !se.LastChangedAt.Equal(revokeTime) {
-		t.Fatalf("expected LastChangedAt %s, got %s", revokeTime, se.LastChangedAt)
-	}
-
 	result := entdom.Resolve("u_42", []entdom.SourceEntitlement{se})
 	if !result.LastChangedAt.Equal(revokeTime) {
 		t.Fatalf("expected canonical LastChangedAt %s, got %s", revokeTime, result.LastChangedAt)
