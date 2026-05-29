@@ -13,4 +13,4 @@ CREATE TABLE IF NOT EXISTS audit_log (
 );
 
 CREATE INDEX IF NOT EXISTS idx_audit_log_user_time
-    ON audit_log (user_id, created_at DESC);
+    ON audit_log (user_id, created_at DESC, id DESC);
