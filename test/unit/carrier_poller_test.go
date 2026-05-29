@@ -82,7 +82,7 @@ func TestPollerInactiveStatusApplied(t *testing.T) {
 	}
 }
 
-func TestPollerAPIErrorSkipsApply(t *testing.T) {
+func TestPollerAPIErrorPassedToRepoApply(t *testing.T) {
 	repo := &mockPollRepo{claimedUsers: []string{"u_1"}}
 	client := &mockCarrierClient{
 		responses: map[string]string{"u_1": "api_error"},
