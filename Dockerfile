@@ -14,6 +14,8 @@ WORKDIR /app
 
 COPY --from=build /bin/subscription-reconciler /usr/local/bin/subscription-reconciler
 COPY migrations ./migrations
+COPY openapi.yaml ./openapi.yaml
+COPY internal/http/handlers/swagger_ui.html ./swagger_ui.html
 
 EXPOSE 8080
 
