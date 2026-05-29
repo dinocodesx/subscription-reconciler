@@ -1,8 +1,15 @@
 package handlers
 
 import (
+	"net/http"
+
 	entdom "github.com/dinocodesx/subscription-reconciler/internal/domain/entitlement"
+	"github.com/dinocodesx/subscription-reconciler/internal/repository/postgres"
 )
+
+type EntitlementHandler struct {
+	store *postgres.Store
+}
 
 type entitlementResponse struct {
 	Active        bool    `json:"active"`
@@ -10,6 +17,27 @@ type entitlementResponse struct {
 	ExpiresAt     *string `json:"expiresAt"`
 	LastChangedAt string  `json:"lastChangedAt"`
 	Reason        string  `json:"reason"`
+}
+
+func NewEntitlementHandler(store *postgres.Store) *EntitlementHandler {
+	return &EntitlementHandler{store: store}
+}
+
+// Handle reads the already-computed entitlement projection for a single user.
+func (h *EntitlementHandler) Handle(w http.ResponseWriter, r *http.Request) {
+	userID := r.PathValue("id")
+	if userID == "" {
+		writeError(w, http.StatusBadRequest, "user id is required")
+		return
+	}
+
+	entitlement, err := h.store.GetEntitlement(r.Context(), userID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, entitlementResponseFromDomain(entitlement))
 }
 
 func entitlementResponseFromDomain(entitlement entdom.Entitlement) entitlementResponse {
