@@ -1,0 +1,130 @@
+openapi: 3.0.3
+info:
+  title: Subscription Reconciler API
+  description: |
+    A service that reconciles premium subscriptions from multiple sales channels:
+    - In-app Store (Webhooks)
+    - Mobile Carrier (Polling)
+    - Third-party Marketplace (Bulk Revoke)
+  version: 1.0.0
+paths:
+  /webhooks/store:
+    post:
+      summary: Ingest In-app Store Webhook
+      description: |
+        Processes events from the in-app store. Handles duplicates, out-of-order, and late events by replaying the user history.
+      tags:
+        - Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - eventId
+                - userId
+                - type
+                - eventTimeMs
+                - productId
+              properties:
+                eventId:
+                  type: string
+                  example: "evt_abc123"
+                userId:
+                  type: string
+                  example: "u_42"
+                type:
+                  type: string
+                  enum: [INITIAL_PURCHASE, RENEWAL, CANCELLATION, BILLING_ISSUE, EXPIRATION, UN_CANCELLATION]
+                eventTimeMs:
+                  type: integer
+                  format: int64
+                  example: 1716700000000
+                productId:
+                  type: string
+                  example: "premium_monthly"
+      responses:
+        '200':
+          description: Event processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  duplicate:
+                    type: boolean
+                  entitlement:
+                    $ref: '#/components/schemas/Entitlement'
+  /webhooks/marketplace/revoke:
+    post:
+      summary: Bulk Revoke Marketplace Access
+      description: |
+        Revokes marketplace-granted access for a list of users. Does not affect access granted by other sources.
+      tags:
+        - Webhooks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userIds
+              properties:
+                userIds:
+                  type: array
+                  items:
+                    type: string
+                  example: ["u_42", "u_91"]
+      responses:
+        '200':
+          description: Revocation processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  revokedCount:
+                    type: integer
+  /users/{id}/entitlement:
+    get:
+      summary: Get Current Entitlement
+      description: Returns the canonical truth for a user's premium status.
+      tags:
+        - Users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "u_42"
+      responses:
+        '200':
+          description: Current entitlement state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Entitlement'
+
+components:
+  schemas:
+    Entitlement:
+      type: object
+      properties:
+        active:
+          type: boolean
+        source:
+          type: string
+          enum: [STORE, CARRIER, MARKETPLACE, NONE]
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastChangedAt:
+          type: string
+          format: date-time
+        reason:
+          type: string
+          example: "RENEWAL"
