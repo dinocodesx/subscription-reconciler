@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -50,7 +51,8 @@ func (h *StoreWebhookHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		ReceivedAt: time.Now().UTC(),
 	})
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		log.Printf("apply store event: %v", err)
+		writeError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	entdom "github.com/dinocodesx/subscription-reconciler/internal/domain/entitlement"
@@ -33,7 +34,8 @@ func (h *EntitlementHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	entitlement, err := h.store.GetEntitlement(r.Context(), userID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		log.Printf("get entitlement for user %s: %v", userID, err)
+		writeError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 

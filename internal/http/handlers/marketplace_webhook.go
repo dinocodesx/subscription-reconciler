@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/dinocodesx/subscription-reconciler/internal/repository/postgres"
@@ -34,7 +35,8 @@ func (h *MarketplaceWebhookHandler) Handle(w http.ResponseWriter, r *http.Reques
 	}
 
 	if err := h.store.RevokeMarketplaceUsers(r.Context(), payload.UserIDs); err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		log.Printf("revoke marketplace users: %v", err)
+		writeError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
