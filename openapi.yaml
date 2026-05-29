@@ -107,6 +107,54 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Entitlement'
+  /users/{id}/timeline:
+    get:
+      summary: Get Entitlement Timeline
+      description: Returns reconstructed entitlement history entries for a user.
+      tags:
+        - Users
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "u_42"
+      responses:
+        '200':
+          description: Entitlement timeline
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: string
+                  timeline:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        eventId:
+                          type: string
+                          nullable: true
+                        source:
+                          type: string
+                        previousActive:
+                          type: boolean
+                        previousSource:
+                          type: string
+                        previousReason:
+                          type: string
+                        nextActive:
+                          type: boolean
+                        nextSource:
+                          type: string
+                        nextReason:
+                          type: string
+                        timestamp:
+                          type: string
+                          format: date-time
 
 components:
   schemas:
