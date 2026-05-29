@@ -13,5 +13,3 @@ func mustParseTimeHelper(value string) time.Time {
 	}
 	return parsed.UTC()
 }
-	return parsed.UTC()
-}
