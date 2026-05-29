@@ -71,7 +71,7 @@ Both the **Carrier Poller** and the **Notification Sender** use a "Claim" patter
 
 ### Secure Error Handling
 
-The API follows a strict security philosophy regarding error exposure. Internal storage or query details are never leaked to the client. All internal errors are securely logged on the server with full context (e.g., User ID, raw error message), while the client receives a generic `"Internal server error"` response.
+The API follows a strict security philosophy regarding error exposure. Internal storage or query details are never leaked to the client. All internal errors are logged on the server with relevant context (including user ID where available), while the client receives a generic JSON error response like `{ "error": "Internal server error" }`.
 
 ### Database Precedence
 
