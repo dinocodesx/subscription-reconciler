@@ -1,4 +1,4 @@
-package testutil
+package util
 
 import (
 	"testing"
@@ -14,4 +14,13 @@ func MustParseTime(t *testing.T, value string) time.Time {
 	}
 
 	return parsed.UTC()
+}
+
+func CloneTime(value *time.Time) *time.Time {
+	if value == nil {
+		return nil
+	}
+
+	cloned := value.UTC()
+	return &cloned
 }

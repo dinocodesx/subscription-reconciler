@@ -32,7 +32,7 @@ func NewRouter(store *postgres.Store) http.Handler {
 	})
 
 	mux.HandleFunc("GET /api-docs", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "swagger_ui.html")
+		http.ServeFile(w, r, "internal/http/ui/swagger_ui.html")
 	})
 
 	return mux

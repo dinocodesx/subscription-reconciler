@@ -11,6 +11,9 @@ const (
 	SourceNone        Source = "NONE"
 )
 
+// MarketplaceRevokeReason is persisted on marketplace source rows when the bulk revoke endpoint removes access.
+const MarketplaceRevokeReason = "MARKETPLACE_REVOKE"
+
 // Entitlement is the canonical answer returned by the read endpoint.
 type Entitlement struct {
 	UserID        string

@@ -1,6 +1,10 @@
 package entitlement
 
-import "time"
+import (
+	"time"
+
+	"github.com/dinocodesx/subscription-reconciler/internal/util"
+)
 
 var sourcePrecedence = []Source{
 	SourceStore,
@@ -36,10 +40,5 @@ func Resolve(userID string, states []SourceEntitlement) Entitlement {
 }
 
 func cloneTime(value *time.Time) *time.Time {
-	if value == nil {
-		return nil
-	}
-
-	cloned := value.UTC()
-	return &cloned
+	return util.CloneTime(value)
 }

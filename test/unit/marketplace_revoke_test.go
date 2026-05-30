@@ -5,13 +5,12 @@ import (
 	"time"
 
 	entdom "github.com/dinocodesx/subscription-reconciler/internal/domain/entitlement"
-	"github.com/dinocodesx/subscription-reconciler/internal/domain/marketplace"
-	"github.com/dinocodesx/subscription-reconciler/internal/testutil"
+	"github.com/dinocodesx/subscription-reconciler/internal/util"
 )
 
 func TestMarketplaceRevokeOnlyAffectsMarketplaceSource(t *testing.T) {
-	now := testutil.MustParseTime(t, "2026-01-10T00:00:00Z")
-	expiresAt := testutil.MustParseTime(t, "2026-02-10T00:00:00Z")
+	now := util.MustParseTime(t, "2026-01-10T00:00:00Z")
+	expiresAt := util.MustParseTime(t, "2026-02-10T00:00:00Z")
 
 	// Simulate post-revoke state: store and carrier are active, marketplace is revoked.
 	states := []entdom.SourceEntitlement{
@@ -35,7 +34,7 @@ func TestMarketplaceRevokeOnlyAffectsMarketplaceSource(t *testing.T) {
 			Source:        entdom.SourceMarketplace,
 			Active:        false,
 			LastChangedAt: now,
-			Reason:        marketplace.RevokeReason,
+			Reason:        entdom.MarketplaceRevokeReason,
 		},
 	}
 
@@ -51,7 +50,7 @@ func TestMarketplaceRevokeOnlyAffectsMarketplaceSource(t *testing.T) {
 }
 
 func TestMarketplaceRevokeDeactivatesMarketplaceOnlyUser(t *testing.T) {
-	now := testutil.MustParseTime(t, "2026-01-10T00:00:00Z")
+	now := util.MustParseTime(t, "2026-01-10T00:00:00Z")
 
 	// User only has marketplace source, and it was revoked.
 	states := []entdom.SourceEntitlement{
@@ -60,7 +59,7 @@ func TestMarketplaceRevokeDeactivatesMarketplaceOnlyUser(t *testing.T) {
 			Source:        entdom.SourceMarketplace,
 			Active:        false,
 			LastChangedAt: now,
-			Reason:        marketplace.RevokeReason,
+			Reason:        entdom.MarketplaceRevokeReason,
 		},
 	}
 
@@ -75,13 +74,13 @@ func TestMarketplaceRevokeDeactivatesMarketplaceOnlyUser(t *testing.T) {
 }
 
 func TestMarketplaceRevokeReasonConstant(t *testing.T) {
-	if marketplace.RevokeReason != "MARKETPLACE_REVOKE" {
-		t.Fatalf("expected revoke reason 'MARKETPLACE_REVOKE', got %q", marketplace.RevokeReason)
+	if entdom.MarketplaceRevokeReason != "MARKETPLACE_REVOKE" {
+		t.Fatalf("expected revoke reason 'MARKETPLACE_REVOKE', got %q", entdom.MarketplaceRevokeReason)
 	}
 }
 
 func TestMarketplaceRevokePreservesLastChangedAt(t *testing.T) {
-	revokeTime := testutil.MustParseTime(t, "2026-01-15T12:00:00Z")
+	revokeTime := util.MustParseTime(t, "2026-01-15T12:00:00Z")
 
 	// After revoke, the source entitlement's LastChangedAt should be the revoke time.
 	se := entdom.SourceEntitlement{
@@ -89,7 +88,7 @@ func TestMarketplaceRevokePreservesLastChangedAt(t *testing.T) {
 		Source:        entdom.SourceMarketplace,
 		Active:        false,
 		LastChangedAt: revokeTime,
-		Reason:        marketplace.RevokeReason,
+		Reason:        entdom.MarketplaceRevokeReason,
 		UpdatedAt:     revokeTime,
 	}
 
@@ -100,7 +99,7 @@ func TestMarketplaceRevokePreservesLastChangedAt(t *testing.T) {
 }
 
 func TestMarketplaceRevokeCarrierFallback(t *testing.T) {
-	now := testutil.MustParseTime(t, "2026-01-10T00:00:00Z")
+	now := util.MustParseTime(t, "2026-01-10T00:00:00Z")
 
 	// Marketplace revoked, but carrier is active. Carrier should win.
 	states := []entdom.SourceEntitlement{
@@ -109,7 +108,7 @@ func TestMarketplaceRevokeCarrierFallback(t *testing.T) {
 			Source:        entdom.SourceMarketplace,
 			Active:        false,
 			LastChangedAt: now.Add(1 * time.Hour),
-			Reason:        marketplace.RevokeReason,
+			Reason:        entdom.MarketplaceRevokeReason,
 		},
 		{
 			UserID:        "u_42",
