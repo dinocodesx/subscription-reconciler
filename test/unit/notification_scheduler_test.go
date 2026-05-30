@@ -4,27 +4,27 @@ import (
 	"testing"
 
 	notifdom "github.com/dinocodesx/subscription-reconciler/internal/domain/notification"
-	"github.com/dinocodesx/subscription-reconciler/internal/testutil"
+	"github.com/dinocodesx/subscription-reconciler/internal/util"
 )
 
 func TestDesiredScheduleUsesExpiryMinus24Hours(t *testing.T) {
-	now := testutil.MustParseTime(t, "2026-01-01T10:00:00Z")
-	expiresAt := testutil.MustParseTime(t, "2026-01-03T10:00:00Z")
+	now := util.MustParseTime(t, "2026-01-01T10:00:00Z")
+	expiresAt := util.MustParseTime(t, "2026-01-03T10:00:00Z")
 
 	scheduledFor, ok := notifdom.DesiredSchedule(now, true, &expiresAt)
 	if !ok {
 		t.Fatalf("expected notification schedule")
 	}
 
-	want := testutil.MustParseTime(t, "2026-01-02T10:00:00Z")
+	want := util.MustParseTime(t, "2026-01-02T10:00:00Z")
 	if scheduledFor == nil || !scheduledFor.Equal(want) {
 		t.Fatalf("expected schedule %s, got %#v", want, scheduledFor)
 	}
 }
 
 func TestDesiredScheduleRunsImmediatelyInside24Hours(t *testing.T) {
-	now := testutil.MustParseTime(t, "2026-01-01T10:00:00Z")
-	expiresAt := testutil.MustParseTime(t, "2026-01-01T20:00:00Z")
+	now := util.MustParseTime(t, "2026-01-01T10:00:00Z")
+	expiresAt := util.MustParseTime(t, "2026-01-01T20:00:00Z")
 
 	scheduledFor, ok := notifdom.DesiredSchedule(now, true, &expiresAt)
 	if !ok {
@@ -37,8 +37,8 @@ func TestDesiredScheduleRunsImmediatelyInside24Hours(t *testing.T) {
 }
 
 func TestDesiredScheduleNoNotificationForInactiveEntitlement(t *testing.T) {
-	now := testutil.MustParseTime(t, "2026-01-01T10:00:00Z")
-	expiresAt := testutil.MustParseTime(t, "2026-01-03T10:00:00Z")
+	now := util.MustParseTime(t, "2026-01-01T10:00:00Z")
+	expiresAt := util.MustParseTime(t, "2026-01-03T10:00:00Z")
 
 	_, ok := notifdom.DesiredSchedule(now, false, &expiresAt)
 	if ok {
@@ -47,7 +47,7 @@ func TestDesiredScheduleNoNotificationForInactiveEntitlement(t *testing.T) {
 }
 
 func TestDesiredScheduleNoNotificationForNilExpiry(t *testing.T) {
-	now := testutil.MustParseTime(t, "2026-01-01T10:00:00Z")
+	now := util.MustParseTime(t, "2026-01-01T10:00:00Z")
 
 	_, ok := notifdom.DesiredSchedule(now, true, nil)
 	if ok {
@@ -56,7 +56,7 @@ func TestDesiredScheduleNoNotificationForNilExpiry(t *testing.T) {
 }
 
 func TestDesiredScheduleNoNotificationForInactiveAndNilExpiry(t *testing.T) {
-	now := testutil.MustParseTime(t, "2026-01-01T10:00:00Z")
+	now := util.MustParseTime(t, "2026-01-01T10:00:00Z")
 
 	_, ok := notifdom.DesiredSchedule(now, false, nil)
 	if ok {

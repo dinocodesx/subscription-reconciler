@@ -6,7 +6,6 @@ import (
 	"time"
 
 	entdom "github.com/dinocodesx/subscription-reconciler/internal/domain/entitlement"
-	"github.com/dinocodesx/subscription-reconciler/internal/domain/marketplace"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -29,7 +28,7 @@ func (s *Store) RevokeMarketplaceUsers(ctx context.Context, userIDs []string) er
 			Source:        entdom.SourceMarketplace,
 			Active:        false,
 			LastChangedAt: now,
-			Reason:        marketplace.RevokeReason,
+			Reason:        entdom.MarketplaceRevokeReason,
 			UpdatedAt:     now,
 		}); err != nil {
 			return err
@@ -48,7 +47,7 @@ func (s *Store) RevokeMarketplaceUsers(ctx context.Context, userIDs []string) er
 }
 
 func (s *Store) recomputeCanonicalEntitlementTx(ctx context.Context, tx pgx.Tx, userID string, eventID *string, triggerSource entdom.Source) (entdom.Entitlement, error) {
-	_, err := s.getCanonicalEntitlementTx(ctx, tx, userID)
+	prev, err := s.getCanonicalEntitlementTx(ctx, tx, userID)
 	if err != nil {
 		return entdom.Entitlement{}, err
 	}
@@ -60,6 +59,10 @@ func (s *Store) recomputeCanonicalEntitlementTx(ctx context.Context, tx pgx.Tx, 
 
 	entitlement := entdom.Resolve(userID, states)
 	if err := s.upsertCanonicalEntitlementTx(ctx, tx, entitlement); err != nil {
+		return entdom.Entitlement{}, err
+	}
+
+	if err := s.insertAuditLogTx(ctx, tx, userID, eventID, triggerSource, prev, entitlement); err != nil {
 		return entdom.Entitlement{}, err
 	}
 

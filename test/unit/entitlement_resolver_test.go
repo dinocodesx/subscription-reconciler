@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	entdom "github.com/dinocodesx/subscription-reconciler/internal/domain/entitlement"
-	"github.com/dinocodesx/subscription-reconciler/internal/testutil"
+	"github.com/dinocodesx/subscription-reconciler/internal/util"
 )
 
 func TestResolveUsesSourcePrecedence(t *testing.T) {
@@ -13,21 +13,21 @@ func TestResolveUsesSourcePrecedence(t *testing.T) {
 			UserID:        "u_42",
 			Source:        entdom.SourceMarketplace,
 			Active:        true,
-			LastChangedAt: testutil.MustParseTime(t, "2026-01-01T00:00:00Z"),
+			LastChangedAt: util.MustParseTime(t, "2026-01-01T00:00:00Z"),
 			Reason:        "seeded_market",
 		},
 		{
 			UserID:        "u_42",
 			Source:        entdom.SourceCarrier,
 			Active:        true,
-			LastChangedAt: testutil.MustParseTime(t, "2026-01-02T00:00:00Z"),
+			LastChangedAt: util.MustParseTime(t, "2026-01-02T00:00:00Z"),
 			Reason:        "active",
 		},
 		{
 			UserID:        "u_42",
 			Source:        entdom.SourceStore,
 			Active:        true,
-			LastChangedAt: testutil.MustParseTime(t, "2026-01-03T00:00:00Z"),
+			LastChangedAt: util.MustParseTime(t, "2026-01-03T00:00:00Z"),
 			Reason:        "RENEWAL",
 		},
 	}
@@ -45,7 +45,7 @@ func TestResolveReturnsNoneWhenNoSourcesAreActive(t *testing.T) {
 			UserID:        "u_42",
 			Source:        entdom.SourceMarketplace,
 			Active:        false,
-			LastChangedAt: testutil.MustParseTime(t, "2026-01-04T00:00:00Z"),
+			LastChangedAt: util.MustParseTime(t, "2026-01-04T00:00:00Z"),
 			Reason:        "MARKETPLACE_REVOKE",
 		},
 	}
@@ -66,21 +66,21 @@ func TestResolveCarrierWinsWhenStoreInactive(t *testing.T) {
 			UserID:        "u_42",
 			Source:        entdom.SourceStore,
 			Active:        false,
-			LastChangedAt: testutil.MustParseTime(t, "2026-01-03T00:00:00Z"),
+			LastChangedAt: util.MustParseTime(t, "2026-01-03T00:00:00Z"),
 			Reason:        "EXPIRATION",
 		},
 		{
 			UserID:        "u_42",
 			Source:        entdom.SourceCarrier,
 			Active:        true,
-			LastChangedAt: testutil.MustParseTime(t, "2026-01-02T00:00:00Z"),
+			LastChangedAt: util.MustParseTime(t, "2026-01-02T00:00:00Z"),
 			Reason:        "active",
 		},
 		{
 			UserID:        "u_42",
 			Source:        entdom.SourceMarketplace,
 			Active:        true,
-			LastChangedAt: testutil.MustParseTime(t, "2026-01-01T00:00:00Z"),
+			LastChangedAt: util.MustParseTime(t, "2026-01-01T00:00:00Z"),
 			Reason:        "seeded_market",
 		},
 	}
@@ -96,13 +96,13 @@ func TestResolveCarrierWinsWhenStoreInactive(t *testing.T) {
 }
 
 func TestResolveLastChangedAtFromMostRecentInactiveSource(t *testing.T) {
-	later := testutil.MustParseTime(t, "2026-01-10T00:00:00Z")
+	later := util.MustParseTime(t, "2026-01-10T00:00:00Z")
 	states := []entdom.SourceEntitlement{
 		{
 			UserID:        "u_42",
 			Source:        entdom.SourceStore,
 			Active:        false,
-			LastChangedAt: testutil.MustParseTime(t, "2026-01-05T00:00:00Z"),
+			LastChangedAt: util.MustParseTime(t, "2026-01-05T00:00:00Z"),
 			Reason:        "EXPIRATION",
 		},
 		{

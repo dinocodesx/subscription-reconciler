@@ -3,6 +3,8 @@ package store
 import (
 	"sort"
 	"time"
+
+	"github.com/dinocodesx/subscription-reconciler/internal/util"
 )
 
 type State struct {
@@ -67,10 +69,5 @@ func Reduce(events []Event, now time.Time) State {
 }
 
 func cloneTime(value *time.Time) *time.Time {
-	if value == nil {
-		return nil
-	}
-
-	cloned := value.UTC()
-	return &cloned
+	return util.CloneTime(value)
 }
